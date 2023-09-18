@@ -1,0 +1,12 @@
+{
+  "name": "chat-room-server",
+  "version": "1.0.0",
+  "description": "migration for golang chat room server",
+  "main": "index.js",
+  "repository": "https://github.com/space-w-alker/chat-room-server.git",
+  "author": "Abdullahi Abass <abassabdullahi4@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "prisma": "^5.3.1"
+  }
+}

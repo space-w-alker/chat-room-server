@@ -1,0 +1,27 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String @id @default(uuid())
+  username String
+  email    String
+  chats    Chat[]
+}
+
+model Chat {
+  id          String   @id @default(uuid())
+  text        String
+  published   Boolean  @default(true)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  chatRoomId  String
+  ChatRoom    ChatRoom @relation(fields: [chatRoomId], references: [id])
+  dateCreated DateTime @updatedAt()
+}
+
+model ChatRoom {
+  id   String @id @default(uuid())
+  chat Chat[]
+}
