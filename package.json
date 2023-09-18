@@ -8,5 +8,8 @@
   "license": "MIT",
   "dependencies": {
     "prisma": "^5.3.1"
+  },
+  "scripts": {
+    "migrate:dev": "prisma migrate dev"
   }
 }

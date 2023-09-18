@@ -4,24 +4,26 @@ datasource db {
 }
 
 model User {
-  id       String @id @default(uuid())
-  username String
-  email    String
-  chats    Chat[]
+  id        String   @id @default(uuid())
+  username  String
+  email     String
+  chats     Chat[]
+  createdAt DateTime @default(now())
 }
 
 model Chat {
-  id          String   @id @default(uuid())
-  text        String
-  published   Boolean  @default(true)
-  authorId    String
-  author      User     @relation(fields: [authorId], references: [id])
-  chatRoomId  String
-  ChatRoom    ChatRoom @relation(fields: [chatRoomId], references: [id])
-  dateCreated DateTime @updatedAt()
+  id         String   @id @default(uuid())
+  text       String
+  published  Boolean  @default(true)
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id])
+  chatRoomId String
+  ChatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id])
+  createdAt  DateTime @default(now())
 }
 
 model ChatRoom {
   id   String @id @default(uuid())
+  name String
   chat Chat[]
 }

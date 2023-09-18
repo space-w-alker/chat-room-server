@@ -14,13 +14,7 @@ var Db *sql.DB
 func init() {
 	var err error
 
-	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
-		viper.GetString("DB_USER"),
-		viper.GetString("DB_PASSWORD"),
-		viper.GetString("DB_HOST"),
-		viper.GetString("DB_NAME"),
-		viper.GetString("DB_SSL_MODE"),
-	)
+	connStr := viper.GetString("DATABASE_URL")
 	Db, err = sql.Open("postgres", connStr)
 
 	if err != nil {
