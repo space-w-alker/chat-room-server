@@ -11,9 +11,9 @@ import (
 var Db *sql.DB
 
 // This function will make a connection to the database only once.
-func init() {
+func InitDB() {
+	fmt.Print(viper.GetString("DATABASE_URL"))
 	var err error
-
 	connStr := viper.GetString("DATABASE_URL")
 	Db, err = sql.Open("postgres", connStr)
 
@@ -24,6 +24,5 @@ func init() {
 	if err = Db.Ping(); err != nil {
 		panic(err)
 	}
-	// this will be printed in the terminal, confirming the connection to the database
 	fmt.Println("The database is connected")
 }

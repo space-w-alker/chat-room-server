@@ -5,8 +5,9 @@ datasource db {
 
 model User {
   id        String   @id @default(uuid())
-  username  String
-  email     String
+  username  String   @unique()
+  email     String   @unique()
+  password  String
   chats     Chat[]
   createdAt DateTime @default(now())
 }
@@ -23,7 +24,14 @@ model Chat {
 }
 
 model ChatRoom {
-  id   String @id @default(uuid())
+  id   String    @id @default(uuid())
   name String
   chat Chat[]
+  tags RoomTag[]
+}
+
+model RoomTag {
+  id        String     @id @default(uuid())
+  name      String
+  chatRooms ChatRoom[]
 }
