@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/space-w-alker/chat-room-server/model/generic"
 	"github.com/space-w-alker/chat-room-server/model/user"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
@@ -24,11 +25,11 @@ func SignUp(dto *user.CreateUserDTO) (jwtToken string, err error) {
 	if err != nil {
 		return "", err
 	}
-	err = user.Create(dto)
+	_, err = user.Create(dto)
 	if err != nil {
 		return "", err
 	}
-	newUser, err := user.GetWhere(&user.GetOrUpdateUserDTO{Email: dto.Email})
+	newUser, err := user.GetWhere(&user.GetOrUpdateUserDTO{Email: dto.Email}, &generic.PaginationArgs{})
 	if err != nil {
 		return "", err
 	}
@@ -37,7 +38,7 @@ func SignUp(dto *user.CreateUserDTO) (jwtToken string, err error) {
 }
 
 func SignIn(email string, password string) (jwtToken string, err error) {
-	u, err := user.GetWhere(&user.GetOrUpdateUserDTO{Email: email})
+	u, err := user.GetWhere(&user.GetOrUpdateUserDTO{Email: email}, &generic.PaginationArgs{})
 	if err != nil {
 		return "", err
 	}

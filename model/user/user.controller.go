@@ -4,12 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/space-w-alker/chat-room-server/model/generic"
 )
 
 func RegisterHandlers(r *gin.Engine)  {
 	group := r.Group("/user")
-	group.POST("/", CreateHandler)
-	group.GET("/", ReadHandler)
+	group.POST("", CreateHandler)
+	group.GET("", ReadHandler)
 	group.GET("/:id", ReadOneHandler)
 	group.PATCH("/:id", UpdateHandler)
 	group.DELETE("/:id", DeleteHandler)
@@ -21,21 +22,41 @@ func CreateHandler(c *gin.Context)  {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	Create(&dto)
+	_,err := Create(&dto)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err.Error())
+	}else{
+		c.JSON(http.StatusOK, gin.H{"status":"success"})
+	}
 }
 
 func ReadOneHandler(c *gin.Context)  {
 	id := c.Param("id")
-	GetById(&id)
+	u, err := GetById(&id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+	}else{
+		c.JSON(http.StatusOK, u)
+	}
 }
 
 func ReadHandler(c *gin.Context)  {
 	var dto GetOrUpdateUserDTO
-	if err := c.ShouldBindJSON(&dto); err != nil {
+	var opts generic.PaginationArgs
+	if err := c.ShouldBind(&dto); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	GetWhere(&dto)
+	if err := c.ShouldBind(&opts); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	items, err := GetWhere(&dto, &opts)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}else{
+		c.JSON(http.StatusOK, gin.H{"items": items})
+	}
 }
 
 func UpdateHandler(c *gin.Context)  {

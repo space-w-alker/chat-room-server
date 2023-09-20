@@ -19,7 +19,7 @@ model Chat {
   authorId   String
   author     User     @relation(fields: [authorId], references: [id])
   chatRoomId String
-  ChatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id])
+  chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id])
   createdAt  DateTime @default(now())
 }
 

@@ -1,19 +1,23 @@
 package user
 
 import (
-	"fmt"
-	"strings"
+	"time"
 
 	"github.com/fatih/structs"
 	"github.com/google/uuid"
 	"github.com/space-w-alker/chat-room-server/database"
+	"github.com/space-w-alker/chat-room-server/model/generic"
+
+	"github.com/doug-martin/goqu/v9"
+	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
 )
 
 type User struct {
-	Id       string `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Id        string    `json:"id" db:"id"`
+	Username  string    `json:"username" db:"username"`
+	Email     string    `json:"email" db:"email"`
+	Password  string    `json:"password" db:"password"`
+	CreatedAt time.Time `json:"createdAt" db:"createdAt"`
 }
 
 type CreateUserDTO struct {
@@ -23,17 +27,18 @@ type CreateUserDTO struct {
 }
 
 type GetOrUpdateUserDTO struct {
-	Username string `json:"username" binding:"min=5,max=50"`
-	Email    string `json:"email" binding:"email"`
-	Password string `json:"password" binding:"min=6,max=50"`
+	Username string `json:"username" form:"username" binding:"omitempty,min=1,max=50"`
+	Email    string `json:"email" form:"email" binding:"omitempty,email"`
+	Password string `json:"password" form:"password" binding:"omitempty,min=6,max=50"`
 }
 
 type UserList []User
 
-func Create(user *CreateUserDTO) error {
+func Create(user *CreateUserDTO) (string, error) {
 	insertDynStmt := `insert into "User"("id", "username", "email", "password") values($1, $2, $3, $4)`
-	_, e := database.Db.Exec(insertDynStmt, uuid.New(), user.Username, user.Email, user.Password)
-	return e
+	id := uuid.New()
+	_, e := database.Db.Exec(insertDynStmt, id, user.Username, user.Email, user.Password)
+	return id.String(), e
 }
 
 func Update(id *string, user *GetOrUpdateUserDTO) error {
@@ -49,32 +54,20 @@ func GetById(id *string) (user User, e error) {
 	return user, e
 }
 
-func GetWhere(getArgs *GetOrUpdateUserDTO) (userList UserList, e error) {
-	keys := structs.Names(getArgs)
-	values := structs.Values(getArgs)
-	_keys := []string{}
-	_values := []interface{}{}
-	index := 1;
-	for i, v := range keys {
-		if values[i] != "" {
-			_keys = append(_keys,fmt.Sprintf("%v=$%v", strings.ToLower(v), index))
-			_values = append(_values, values[i])
-			index++
+func GetWhere(getArgs *GetOrUpdateUserDTO, opts *generic.PaginationArgs) (userList UserList, e error) {
+	db := database.DB
+	_where := map[string]interface{}{}
+	where := goqu.Ex{}
+	structs.FillMap(getArgs, _where)
+	for _, field := range structs.Fields(getArgs) {
+		if _where[field.Name()] != "" {
+			where[field.Tag("json")] = _where[field.Name()]
 		}
 	}
-	getStmt := fmt.Sprintf(`select id, username, email, password from "User" where %v`, strings.Join(_keys, " and "))
-	fmt.Print(getStmt)
-	row, e := database.Db.Query(getStmt, _values...)
-	if e != nil {
-		return nil, e
-	}
-	for row.Next() {
-		var user User
-		e = row.Scan(&user.Id, &user.Username, &user.Email, &user.Password)
-		if e != nil {
-			return nil, e
-		}
-		userList = append(userList, user)
+	offset := (opts.Page - 1) * opts.Limit
+	query := db.From("User").Order(goqu.C("createdAt").Desc().NullsLast()).Offset(offset).Limit(opts.Limit).Where(where)
+	if err := query.ScanStructs(&userList); err != nil {
+		return nil, err
 	}
 	return userList, nil
 }
