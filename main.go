@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	viper.SetConfigFile(".env")
+	viper.SetConfigFile(".local.env")
 	viper.ReadInConfig()
 	database.InitDB()
 }

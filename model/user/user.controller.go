@@ -4,10 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/space-w-alker/chat-room-server/database"
 	"github.com/space-w-alker/chat-room-server/model/generic"
 )
 
-func RegisterHandlers(r *gin.Engine)  {
+func RegisterHandlers(r *gin.Engine) {
 	group := r.Group("/user")
 	group.POST("", CreateHandler)
 	group.GET("", ReadHandler)
@@ -16,32 +17,32 @@ func RegisterHandlers(r *gin.Engine)  {
 	group.DELETE("/:id", DeleteHandler)
 }
 
-func CreateHandler(c *gin.Context)  {
-	var dto CreateUserDTO
+func CreateHandler(c *gin.Context) {
+	var dto User
 	if err := c.ShouldBindJSON(&dto); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	_,err := Create(&dto)
+	_, err := Create(database.DB, &dto)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
-	}else{
-		c.JSON(http.StatusOK, gin.H{"status":"success"})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"status": "success"})
 	}
 }
 
-func ReadOneHandler(c *gin.Context)  {
+func ReadOneHandler(c *gin.Context) {
 	id := c.Param("id")
-	u, err := GetById(&id)
+	u, err := GetById(database.DB, &id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-	}else{
+	} else {
 		c.JSON(http.StatusOK, u)
 	}
 }
 
-func ReadHandler(c *gin.Context)  {
-	var dto GetOrUpdateUserDTO
+func ReadHandler(c *gin.Context) {
+	var dto User
 	var opts generic.PaginationArgs
 	if err := c.ShouldBind(&dto); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -51,25 +52,35 @@ func ReadHandler(c *gin.Context)  {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	items, err := GetWhere(&dto, &opts)
+	items, meta, err := GetWhere(database.DB, &dto, &opts)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	}else{
-		c.JSON(http.StatusOK, gin.H{"items": items})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"items": items, "meta": meta})
 	}
 }
 
-func UpdateHandler(c *gin.Context)  {
+func UpdateHandler(c *gin.Context) {
 	id := c.Param("id")
-	var dto GetOrUpdateUserDTO
+	var dto User
 	if err := c.ShouldBindJSON(&dto); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	Update(&id, &dto)
+	err := Update(database.DB, &id, &dto)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"status": "success"})
+	}
 }
 
-func DeleteHandler(c *gin.Context)  {
+func DeleteHandler(c *gin.Context) {
 	id := c.Param("id")
-	Delete(&id)
+	err := Delete(database.DB, &id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"status": "success"})
+	}
 }

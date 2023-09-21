@@ -3,9 +3,7 @@ package user
 import (
 	"time"
 
-	"github.com/fatih/structs"
 	"github.com/google/uuid"
-	"github.com/space-w-alker/chat-room-server/database"
 	"github.com/space-w-alker/chat-room-server/model/generic"
 
 	"github.com/doug-martin/goqu/v9"
@@ -13,67 +11,55 @@ import (
 )
 
 type User struct {
-	Id        string    `json:"id" db:"id"`
-	Username  string    `json:"username" db:"username"`
-	Email     string    `json:"email" db:"email"`
-	Password  string    `json:"password" db:"password"`
-	CreatedAt time.Time `json:"createdAt" db:"createdAt"`
-}
-
-type CreateUserDTO struct {
-	Username string `json:"username" binding:"required,min=1,max=50"`
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6,max=50"`
-}
-
-type GetOrUpdateUserDTO struct {
-	Username string `json:"username" form:"username" binding:"omitempty,min=1,max=50"`
-	Email    string `json:"email" form:"email" binding:"omitempty,email"`
-	Password string `json:"password" form:"password" binding:"omitempty,min=6,max=50"`
+	Id        *string    `json:"id" form:"id" db:"id"`
+	Username  *string    `json:"username" form:"username" db:"username"`
+	Email     *string    `json:"email" form:"email" db:"email"`
+	Password  *string    `json:"password" form:"password" db:"password"`
+	CreatedAt *time.Time `json:"createdAt" form:"createdAt" db:"createdAt"`
 }
 
 type UserList []User
 
-func Create(user *CreateUserDTO) (string, error) {
-	insertDynStmt := `insert into "User"("id", "username", "email", "password") values($1, $2, $3, $4)`
-	id := uuid.New()
-	_, e := database.Db.Exec(insertDynStmt, id, user.Username, user.Email, user.Password)
-	return id.String(), e
+func Create(db *goqu.Database, user *User) (string, error) {
+	id := uuid.New().String()
+	m := map[string]interface{}{}
+	user.Id = &id
+	generic.ToJsMap(*user, m)
+	_, e := db.Insert("User").Rows(m).Executor().Exec()
+	return id, e
 }
 
-func Update(id *string, user *GetOrUpdateUserDTO) error {
-	updateStmt := `update "User" set "username"=$2, "email"=$3 "password"=$4 where "id"=$1`
-	_, e := database.Db.Exec(updateStmt, id, user.Username, user.Email, user.Password)
+func Update(db *goqu.Database, id *string, user *User) error {
+	m := map[string]interface{}{}
+	generic.ToJsMap(*user, m)
+	_, e := db.Update("User").Set(m).Where(goqu.Ex{"id": id}).Executor().Exec()
 	return e
 }
 
-func GetById(id *string) (user User, e error) {
-	getStmt := `select id, username, email, password from "User" where "id" = '$1'`
-	row := database.Db.QueryRow(getStmt, user.Id)
-	e = row.Scan(user.Id, user.Username, user.Email, user.Password)
+func GetById(db *goqu.Database, id *string) (user *User, e error) {
+	user = &User{}
+	_, e = db.From("User").Where(goqu.Ex{"id": *id}).ScanStruct(user)
 	return user, e
 }
 
-func GetWhere(getArgs *GetOrUpdateUserDTO, opts *generic.PaginationArgs) (userList UserList, e error) {
-	db := database.DB
-	_where := map[string]interface{}{}
+func GetWhere(db *goqu.Database, getArgs *User, opts *generic.PaginationArgs) (userList UserList, meta generic.PaginationMeta, e error) {
 	where := goqu.Ex{}
-	structs.FillMap(getArgs, _where)
-	for _, field := range structs.Fields(getArgs) {
-		if _where[field.Name()] != "" {
-			where[field.Tag("json")] = _where[field.Name()]
-		}
-	}
+	generic.ToJsMap(getArgs, where)
 	offset := (opts.Page - 1) * opts.Limit
 	query := db.From("User").Order(goqu.C("createdAt").Desc().NullsLast()).Offset(offset).Limit(opts.Limit).Where(where)
+	countQuery := db.From("User").Where(where)
 	if err := query.ScanStructs(&userList); err != nil {
-		return nil, err
+		return nil, meta, err
 	}
-	return userList, nil
+	total, err := countQuery.Count()
+	if err != nil {
+		return nil, meta, err
+	}
+	meta = generic.PaginationMeta{TotalItems: uint(total), Page: opts.Page, Limit: opts.Limit}
+	return userList, meta, nil
 }
 
-func Delete(id *string) error {
-	deleteStmt := `delete from "User" where id=$1`
-	_, e := database.Db.Exec(deleteStmt, id)
+func Delete(db *goqu.Database, id *string) error {
+	_,e := db.Delete("User").Where(goqu.Ex{"id":id}).Executor().Exec()
 	return e
 }

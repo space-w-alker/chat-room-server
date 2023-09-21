@@ -14,7 +14,7 @@ func RegisterHandlers(engine *gin.Engine) {
 }
 
 func SignUpHandler(c *gin.Context) {
-	var dto user.CreateUserDTO
+	var dto user.User
 	if err := c.ShouldBindJSON(&dto); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

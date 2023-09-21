@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/space-w-alker/chat-room-server/database"
 	"github.com/space-w-alker/chat-room-server/model/generic"
 	"github.com/space-w-alker/chat-room-server/model/user"
 	"github.com/spf13/viper"
@@ -20,33 +21,34 @@ type SignInDTO struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6,max=50"`
 }
-func SignUp(dto *user.CreateUserDTO) (jwtToken string, err error) {
-	dto.Password, err = HashPassword(dto.Password)
+func SignUp(dto *user.User) (jwtToken string, err error) {
+	pass, err := HashPassword(*dto.Password)
 	if err != nil {
 		return "", err
 	}
-	_, err = user.Create(dto)
+	dto.Password = &pass;
+	_, err = user.Create(database.DB, dto)
 	if err != nil {
 		return "", err
 	}
-	newUser, err := user.GetWhere(&user.GetOrUpdateUserDTO{Email: dto.Email}, &generic.PaginationArgs{})
+	newUser,_, err := user.GetWhere(database.DB, &user.User{Email: dto.Email}, &generic.PaginationArgs{})
 	if err != nil {
 		return "", err
 	}
-	jwtToken, err = SignJWT(newUser[0].Id)
+	jwtToken, err = SignJWT(*newUser[0].Id)
 	return jwtToken, err
 }
 
 func SignIn(email string, password string) (jwtToken string, err error) {
-	u, err := user.GetWhere(&user.GetOrUpdateUserDTO{Email: email}, &generic.PaginationArgs{})
+	u,_, err := user.GetWhere(database.DB, &user.User{Email: &email}, &generic.PaginationArgs{})
 	if err != nil {
 		return "", err
 	}
 	if (len(u) == 0){
 		return "", fmt.Errorf("user not found")
 	}
-	if CheckPasswordHash(password, u[0].Password){
-		jwtToken, err = SignJWT(u[0].Id)
+	if CheckPasswordHash(password, *u[0].Password){
+		jwtToken, err = SignJWT(*u[0].Id)
 		return jwtToken, err;
 	}else {
 		return "", fmt.Errorf("wrong password")
@@ -96,12 +98,12 @@ func VerifyJWT(tokenString string) (value string, err error) {
 	}
 }
 
-func GetUserByToken(tokenString string) (u user.User, err error)  {
+func GetUserByToken(tokenString string) (u *user.User, err error)  {
 	uid, err := VerifyJWT(tokenString)
 	if err != nil {
 		return u, err
 	}
-	u, err = user.GetById(&uid)
+	u, err = user.GetById(database.DB, &uid)
 	if err != nil {
 		return u, err
 	}
