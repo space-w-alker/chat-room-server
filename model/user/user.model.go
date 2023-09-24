@@ -20,26 +20,26 @@ type User struct {
 
 type UserList []User
 
-func Create(db *goqu.Database, user *User) (string, error) {
+func Create(db *goqu.Database, u *User) (string, error) {
 	id := uuid.New().String()
 	m := map[string]interface{}{}
-	user.Id = &id
-	generic.ToJsMap(*user, m)
+	u.Id = &id
+	generic.ToJsMap(*u, m)
 	_, e := db.Insert("User").Rows(m).Executor().Exec()
 	return id, e
 }
 
-func Update(db *goqu.Database, id *string, user *User) error {
+func Update(db *goqu.Database, id *string, u *User) error {
 	m := map[string]interface{}{}
-	generic.ToJsMap(*user, m)
+	generic.ToJsMap(*u, m)
 	_, e := db.Update("User").Set(m).Where(goqu.Ex{"id": id}).Executor().Exec()
 	return e
 }
 
-func GetById(db *goqu.Database, id *string) (user *User, e error) {
-	user = &User{}
-	_, e = db.From("User").Where(goqu.Ex{"id": *id}).ScanStruct(user)
-	return user, e
+func GetById(db *goqu.Database, id *string) (u *User, e error) {
+	u = &User{}
+	_, e = db.From("User").Where(goqu.Ex{"id": *id}).ScanStruct(u)
+	return u, e
 }
 
 func GetWhere(db *goqu.Database, getArgs *User, opts *generic.PaginationArgs) (userList UserList, meta generic.PaginationMeta, e error) {

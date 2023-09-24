@@ -24,14 +24,16 @@ model Chat {
 }
 
 model ChatRoom {
-  id   String    @id @default(uuid())
-  name String
-  chat Chat[]
-  tags RoomTag[]
+  id        String    @id @default(uuid())
+  name      String
+  chat      Chat[]
+  tags      RoomTag[]
+  createdAt DateTime  @default(now())
 }
 
 model RoomTag {
   id        String     @id @default(uuid())
   name      String
   chatRooms ChatRoom[]
+  createdAt DateTime   @default(now())
 }
