@@ -9,6 +9,8 @@ import (
 type PaginationArgs struct {
 	Page  uint `json:"page" form:"page" binding:"omitempty,number,gt=1"`
 	Limit uint `json:"limit" form:"limit" binding:"omitempty,number,gt=1"`
+	OrderBy uint `json:"orderBy" form:"orderBy" binding:"omitempty,number,gt=1"`
+	Dir uint `json:"dir" form:"dir" binding:"omitempty,number,gt=1,oneof=asc desc"`
 }
 type PaginationMeta struct {
 	Page       uint `json:"page" form:"page" binding:"omitempty,number,gt=0"`
