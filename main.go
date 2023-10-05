@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/space-w-alker/chat-room-server/auth"
@@ -22,14 +21,13 @@ func init() {
 
 func main() {
 	r := gin.Default()
-	r.GET("/", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, map[string]string{"response": "done"})
-	})
 	user.RegisterHandlers(r)
 	auth.RegisterHandlers(r)
 	chat.RegisterHandlers(r)
 	chat_room.RegisterHandlers(r)
 	room_tag.RegisterHandlers(r)
+	r.Static("public", "./public")
+	r.StaticFile("/favicon.ico", "./public/favicon.ico")
 	err := r.Run()
 	log.Fatal(err)
 }
