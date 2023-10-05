@@ -53,7 +53,7 @@ func parseFields(s string) (fields []Field) {
 	s = strings.TrimSpace(s)
 	sL := strings.Split(s, "\n")
 	for i := range sL {
-		r := regexp.MustCompile(`(\w+?)\s+?(\w+)(\?*)`)
+		r := regexp.MustCompile(`(\w+?)\s+?(\w+)(\??)\s*(@\S+\s+@\S+\s+)*(\/\/\S+)*`)
 		sL[i] = strings.TrimSpace(sL[i])
 		match := r.FindStringSubmatch(sL[i])
 		ft := match[2]
@@ -105,7 +105,6 @@ func generateModel(model Model) {
 		fmt.Printf("Error creating directories: %v\n", err)
 		return
 	}
-
 
 	content, err := os.ReadFile("generator/model.txt")
 	if err != nil {
